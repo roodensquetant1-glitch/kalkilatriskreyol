@@ -4,6 +4,10 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>Kalkilatris an Kreyòl</title>
+  
+  <link rel="manifest" href="manifest.json">
+
+  
 
   <style>
     :root{
@@ -206,6 +210,15 @@
   display.addEventListener('focus', () => {
     // pa fè anything; readonly si ou vle anpeche klavye natif. Nou kite editable pou fasilite
   });
+  
+  <script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('service-worker.js')
+    .then(() => console.log("✅ Service Worker enstale"))
+    .catch(err => console.log("❌ Service Worker echwe:", err));
+  }
 </script>
+
 </body>
 </html>
+
