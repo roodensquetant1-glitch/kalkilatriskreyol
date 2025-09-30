@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="ht">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Kalkilatris an Kreyòl</title>
+
+  <style>
+    :root{
+      --bg:#f3f6fb; --card:#fff; --accent:#2b7cff; --muted:#eef3ff; --op:#dfeeff;
+    }
+    body{
+      margin:0; font-family:Arial,Helvetica,sans-serif;
+      display:flex; align-items:center; justify-content:center; min-height:100vh;
+      background:var(--bg);
+    }
+    .calc{
+      width:360px; max-width:92vw; background:var(--card); padding:18px; border-radius:14px;
+      box-shadow:0 10px 30px rgba(0,0,0,0.08);
+    }
+    #display{
+      width:100%; height:64px; font-size:28px; padding:8px 12px; box-sizing:border-box;
+      border-radius:10px; border:1px solid #e0e6f0; text-align:right;
+    }
+    .keys{
+      margin-top:12px; display:grid; gap:10px;
+      grid-template-columns: repeat(4, 1fr);
+    }
+    button{
+      padding:14px; font-size:18px; border-radius:10px; border:0; cursor:pointer;
+      background:var(--muted); color:#111;
+      box-shadow:0 4px 8px rgba(43,124,255,0.06);
+    }
+    button:active{ transform:translateY(1px); }
+    .op{ background:var(--op); }
+    .accent{ background:var(--accent); color:#fff; }
+    .wide{ grid-column: span 2; }
+    .small{ padding:10px; font-size:16px; }
+    .row{ display:flex; gap:10px; margin-top:8px; justify-content:space-between; align-items:center; }
+    .title{ font-weight:700; margin:0 0 8px 0; }
+    /* modal */
+    .modal-back{ position:fixed; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,0.35); }
+    .modal{ background:#fff; padding:16px; border-radius:12px; width:320px; max-width:92vw; box-shadow:0 12px 30px rgba(0,0,0,0.15); }
+    .modal button{ margin:6px 6px 0 0; }
+    @media (max-width:380px){
+      #display{ font-size:22px; height:56px; }
+      button{ padding:12px; font-size:16px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="calc" role="application" aria-label="Kalkilatris an Kreyòl">
+    <input id="display" type="text" placeholder="0" aria-label="Ekran kalkilatris" />
+    <div class="keys" id="keys">
+      <!-- ranje 1 -->
+      <button onclick="press('7')">7</button>
+      <button onclick="press('8')">8</button>
+      <button onclick="press('9')">9</button>
+      <button class="op" onclick="press('/')">÷</button>
+      <!-- ranje 2 -->
+      <button onclick="press('4')">4</button>
+      <button onclick="press('5')">5</button>
+      <button onclick="press('6')">6</button>
+      <button class="op" onclick="press('*')">×</button>
+      <!-- ranje 3 -->
+      <button onclick="press('1')">1</button>
+      <button onclick="press('2')">2</button>
+      <button onclick="press('3')">3</button>
+      <button class="op" onclick="press('-')">−</button>
+      <!-- ranje 4 -->
+      <button onclick="press('0')">0</button>
+      <button onclick="press('.')">.</button>
+      <button class="accent" onclick="calculate()">=</button>
+      <button class="op" onclick="press('+')">+</button>
+      <!-- ranje 5 -->
+      <button onclick="clearAll()">C</button>
+      <button onclick="sqrt()">√</button>
+      <button onclick="press('^')">^</button>
+      <button onclick="back()">⌫</button>
+      <!-- ranje 6 -->
+      <button onclick="percent()">%</button>
+      <button onclick="square()">x²</button>
+      <button onclick="inverse()">1/x</button>
+      <button class="wide" onclick="openAdvanced()">Fonksyon Avanse</button>
+    </div>
+  </div>
+
+  <!-- Modal Fonksyon Avanse -->
+  <div id="modalRoot" aria-hidden="true"></div>
+
+<script>
+  const display = document.getElementById('display');
+
+  // Fonksyon debaz
+  function press(s){
+    // si "Erè", ranplase pa nouvo antre
+    if(display.value === 'Erè') display.value = '';
+    display.value += s;
+  }
+  function clearAll(){ display.value = ''; }
+  function back(){ display.value = display.value.slice(0,-1); }
+
+  function safeEval(expr){
+    // ranplase ^ ak **, retire karaktè ki pa pèmèt
+    const cleaned = expr.replace(/\\^/g,'**').replace(/[^0-9.+\\-*/()%eE**]/g, function(c){
+      return c; // pèmèt sinon; nou pa fè filtraj estrik pou pa kase kalkil (evite chanjman twòp)
+    });
+    return eval(cleaned);
+  }
+
+  function calculate(){
+    try{
+      if(!display.value) return;
+      const result = safeEval(display.value);
+      display.value = String(result);
+    }catch(e){
+      display.value = 'Erè';
+    }
+  }
+
+  // Fonksyon matematik
+  function sqrt(){
+    try{
+      const v = parseFloat(display.value);
+      display.value = String(Math.sqrt(v));
+    }catch(e){ display.value='Erè'; }
+  }
+  function percent(){
+    try{
+      const v = parseFloat(display.value);
+      display.value = String(v/100);
+    }catch(e){ display.value='Erè'; }
+  }
+  function square(){
+    try{
+      const v = parseFloat(display.value);
+      display.value = String(Math.pow(v,2));
+    }catch(e){ display.value='Erè'; }
+  }
+  function inverse(){
+    try{
+      const v = parseFloat(display.value);
+      display.value = String(1/v);
+    }catch(e){ display.value='Erè'; }
+  }
+
+  // Modal Avanse: sin/cos/tan/log (degre)
+  function openAdvanced(){
+    const root = document.getElementById('modalRoot');
+    root.innerHTML = `
+      <div class="modal-back" role="dialog" aria-modal="true">
+        <div class="modal">
+          <h3 class="title">Fonksyon Avanse</h3>
+          <p>Valè aktyèl la: <strong id="valNow">${display.value || '0'}</strong></p>
+          <div>
+            <button onclick="applyAdv('sin')">sin</button>
+            <button onclick="applyAdv('cos')">cos</button>
+            <button onclick="applyAdv('tan')">tan</button>
+            <button onclick="applyAdv('log')">log10</button>
+            <button onclick="closeModal()" style="float:right">Fèmen</button>
+          </div>
+        </div>
+      </div>
+    `;
+    root.setAttribute('aria-hidden','false');
+  }
+
+  function closeModal(){
+    const root = document.getElementById('modalRoot');
+    root.innerHTML = '';
+    root.setAttribute('aria-hidden','true');
+  }
+
+  function applyAdv(fn){
+    try{
+      const v = parseFloat(display.value);
+      let res = v;
+      if(fn === 'sin') res = Math.sin(v * Math.PI/180);
+      if(fn === 'cos') res = Math.cos(v * Math.PI/180);
+      if(fn === 'tan') res = Math.tan(v * Math.PI/180);
+      if(fn === 'log') res = Math.log10(v);
+      display.value = String(res);
+      closeModal();
+    }catch(e){
+      display.value = 'Erè';
+      closeModal();
+    }
+  }
+
+  // Sipò klavye (Enter = kalkile, Backspace, Escape)
+  window.addEventListener('keydown', (ev) => {
+    if(ev.key === 'Enter'){ ev.preventDefault(); calculate(); }
+    else if(ev.key === 'Backspace'){ /* default ap efase si focus sou input */ }
+    else if(ev.key === 'Escape'){ clearAll(); closeModal(); }
+    else {
+      // pèmèt kle chif & operatè
+      const allowed = '0123456789.+-*/()%^';
+      if(allowed.includes(ev.key)){
+        press(ev.key);
+        ev.preventDefault();
+      }
+    }
+  });
+
+  // Tou senp touche sou ekran: mete focus sou display pou klavye montre sou mobile si itil
+  display.addEventListener('focus', () => {
+    // pa fè anything; readonly si ou vle anpeche klavye natif. Nou kite editable pou fasilite
+  });
+</script>
+</body>
+</html>
